@@ -1,14 +1,30 @@
 use crate::ast::Expression;
 use crate::ast::Statement;
 use crate::token::Token;
+use core::fmt;
+use std::fmt::Display;
 use std::iter::Peekable;
 use std::vec;
 
 #[derive(Debug)]
 pub enum ParserError {
-    WrongToken,
-    InvalidToken,
+    InvalidToken { expected: Token, found: Token },
+    Unexpected(Token),
+    UnexpectedToken,
 }
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParserError::InvalidToken { expected, found } => {
+                write!(f, "Expected {}, but found {} instead", expected, found)
+            }
+            ParserError::Unexpected(t) => write!(f, "Unexpected token {}", t),
+            ParserError::UnexpectedToken => write!(f, "Unexpected token"),
+        }
+    }
+}
+
 pub struct Parser<'a> {
     pub tokens: Peekable<std::slice::Iter<'a, Token>>,
 }
@@ -37,23 +53,24 @@ impl Parser<'_> {
     fn parse_statement(&mut self) -> Result<Statement, ParserError> {
         match self.tokens.peek() {
             Some(Token::Let) => self.parse_let_statement(),
-            _ => return Err(ParserError::InvalidToken),
+            Some(Token::Return) => self.parse_return_statement(),
+            _ => return Err(ParserError::UnexpectedToken),
         }
     }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParserError> {
         self.tokens.next(); // consume the Let token
         let iden = if let Some(Token::Identifier(iden)) = self.tokens.peek() {
-            self.tokens.next(); // consume the identifier
+            self.tokens.peek();
             iden
         } else {
-            return Err(ParserError::WrongToken);
+            return Err(ParserError::UnexpectedToken);
         };
 
         if let Some(Token::Assign) = self.tokens.peek() {
             self.tokens.next(); // consume the equal token
         } else {
-            return Err(ParserError::WrongToken);
+            return Err(ParserError::UnexpectedToken);
         }
 
         // temp solution until expr parsing logic is completed
@@ -61,10 +78,27 @@ impl Parser<'_> {
             self.tokens.next();
             Expression::Number(*num)
         } else {
-            return Err(ParserError::WrongToken);
+            return Err(ParserError::UnexpectedToken);
         };
         self.tokens.next(); //consume the semicolon token
-        
+
         Ok(Statement::Let(iden.into(), expr))
+    }
+
+    fn parse_return_statement(&mut self) -> Result<Statement, ParserError> {
+        self.tokens.next(); // consume the return token
+        
+        // temp: remove loop when parsing expression is complete
+        while let Some(token) = self.tokens.peek() {
+            match token {
+                Token::Semicolon => {
+                    self.tokens.next();
+                    break;
+                }
+                _ => self.tokens.next()
+            };
+        };
+
+        Ok(Statement::Return(()))
     }
 }

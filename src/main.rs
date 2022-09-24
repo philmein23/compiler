@@ -23,9 +23,7 @@ fn main() {
                         // for token in tokens {
                         //     println!("{:?}", token);
                         // }
-                        let mut p = Parser {
-                            tokens
-                        };
+                        let mut p = Parser { tokens };
                         match p.parse_program() {
                             Ok(stmts) => {
                                 for stmt in stmts {

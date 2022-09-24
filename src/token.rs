@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug)]
 pub enum Token {
     If,
@@ -33,4 +35,44 @@ pub enum Token {
     Minus,
     Slash,
     EOF,
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::If => write!(f, "if"),
+            Token::Else => write!(f, "e1lse"),
+            Token::True => write!(f, "true"),
+            Token::False => write!(f, "false"),
+            Token::Let => write!(f, "let"),
+            Token::Number(n) => write!(f, "number {:?}", n),
+            Token::Identifier(i) => write!(f, "variable identifier"),
+            Token::String(s) => write!(f, "string {:?}", s),
+            Token::Bang => write!(f, "!"),
+            Token::NotEqual => write!(f, "!="),
+            Token::Assign => write!(f, "="),
+            Token::Equal => write!(f, "=="),
+            Token::Greater => write!(f, ">"),
+            Token::GreaterEqual => write!(f, ">="),
+            Token::Less => write!(f, "<"),
+            Token::LessEqual => write!(f, "<="),
+            Token::While => write!(f, "while"),
+            Token::For => write!(f, "for"),
+            Token::Fn => write!(f, "fn"),
+            Token::RightParen => write!(f, ")"),
+            Token::LeftParen => write!(f, "("),
+            Token::RightBrace => write!(f, "}}"),
+            Token::LeftBrace => write!(f, "{{"),
+            Token::Colon => write!(f, ":"),
+            Token::Comma => write!(f, ","),
+            Token::Dot => write!(f, "."),
+            Token::Semicolon => write!(f, ";"),
+            Token::Return => write!(f, "return"),
+            Token::Star => write!(f, "*"),
+            Token::Plus => write!(f, "+"),
+            Token::Minus => write!(f, "-"),
+            Token::Slash => write!(f, "/"),
+            Token::EOF => write!(f, "End of file"),
+        }
+    }
 }
