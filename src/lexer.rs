@@ -1,6 +1,6 @@
 use crate::token::Token;
 use core::fmt;
-use std::{iter::Peekable, num};
+use std::{num, iter::Peekable};
 
 #[derive(Debug)]
 pub enum LexerError {
@@ -118,8 +118,9 @@ impl Lexer {
                 };
                 self.tokens.push(token);
             }
-            self.tokens.push(Token::EOF);
         }
+        self.tokens.push(Token::EOF);
+
         Ok(self.tokens.iter().peekable())
     }
 }

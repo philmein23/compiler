@@ -20,14 +20,11 @@ fn main() {
                 let mut lexer = Lexer::new(s);
                 match lexer.collect_tokens() {
                     Ok(tokens) => {
-                        // for token in tokens {
-                        //     println!("{:?}", token);
-                        // }
                         let mut p = Parser { tokens };
                         match p.parse_program() {
                             Ok(stmts) => {
                                 for stmt in stmts {
-                                    println!("STMT: {:?}", stmt);
+                                    println!("STMT: {}", stmt);
                                 }
                             }
                             Err(e) => {

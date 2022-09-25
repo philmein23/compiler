@@ -82,9 +82,11 @@ impl Parser<'_> {
                 break;
             }
             // ex. 5 + 10 * 20;
+            // ex. 10 * 5 - 5;
+            // ex. 10 * 2 / 2 + 5;
             // Don't like what I did here- need to refactor this
             let some_token = self.tokens.peek().map(|token| *token);
-            if prec > self.lookup_precedence(some_token).0 {
+            if prec >= self.lookup_precedence(some_token).0 {
                 break;
             }
 
@@ -98,8 +100,8 @@ impl Parser<'_> {
         match token {
             Some(Token::Plus) => (Precedence::Sum, Some(Infix::Plus)),
             Some(Token::Minus) => (Precedence::Sum, Some(Infix::Minus)),
-            Some(Token::Star) => (Precedence::Product, Some(Infix::Star)), 
             Some(Token::Slash) => (Precedence::Product, Some(Infix::Slash)), 
+            Some(Token::Star) => (Precedence::Product, Some(Infix::Star)), 
             Some(Token::Greater) => (Precedence::LessGreater, Some(Infix::GreaterThan)), 
             Some(Token::GreaterEqual) => (Precedence::LessGreater, Some(Infix::GreaterEqual)), 
             Some(Token::Less) => (Precedence::LessGreater, Some(Infix::LessThan)), 
@@ -188,7 +190,7 @@ impl Parser<'_> {
     fn parse_let_statement(&mut self) -> Result<Statement, ParserError> {
         self.tokens.next(); // consume the Let token
         let iden = if let Some(Token::Identifier(iden)) = self.tokens.peek() {
-            self.tokens.peek();
+            self.tokens.next(); // consume identifier token
             iden
         } else {
             return Err(ParserError::UnexpectedToken);
@@ -210,6 +212,8 @@ impl Parser<'_> {
         self.tokens.next(); // consume the return token
 
         let expr = self.parse_expression(Precedence::Lowest)?;
+
+        self.tokens.next(); // consume the semicolon token
 
         Ok(Statement::Return(expr))
     }
