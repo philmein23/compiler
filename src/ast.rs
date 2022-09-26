@@ -12,8 +12,7 @@ impl Display for Statement {
         match self {
             Statement::Let(iden, expr) => write!(f, "let {} = {};", iden, expr),
             Statement::Return(expr) => write!(f, "return {};", expr),
-            Statement::Expression(expr) => write!(f, "{};", expr)
-
+            Statement::Expression(expr) => write!(f, "{};", expr),
         }
     }
 }
@@ -25,16 +24,19 @@ pub enum Expression {
     Binary(Box<Expression>, Infix, Box<Expression>),
     Unary(Prefix, Box<Expression>),
     Variable(String),
+    Boolean(bool),
 }
+
 
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expression::Number(n) => write!(f, "{}", n),
-            Expression::StringLiteral(s) => write!(f, "{}",s),
+            Expression::StringLiteral(s) => write!(f, "{}", s),
             Expression::Binary(lhs, infix, rhs) => write!(f, "({} {} {})", lhs, infix, rhs),
-            Expression::Unary(prefix, expr) => write!(f, "{}{}", prefix, expr),
-            Expression::Variable(iden) => write!(f, "{}", iden)
+            Expression::Unary(prefix, expr) => write!(f, "({}{})", prefix, expr),
+            Expression::Variable(iden) => write!(f, "{}", iden),
+            Expression::Boolean(bool) => write!(f, "{}", bool),
         }
     }
 }
@@ -49,7 +51,7 @@ impl Display for Prefix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Prefix::Minus => write!(f, "-"),
-            Prefix::Bang => write!(f, "!")
+            Prefix::Bang => write!(f, "!"),
         }
     }
 }
@@ -80,7 +82,7 @@ impl Display for Infix {
             Infix::GreaterThan => write!(f, ">"),
             Infix::GreaterEqual => write!(f, ">="),
             Infix::Slash => write!(f, "/"),
-            Infix::Star => write!(f, "*")
+            Infix::Star => write!(f, "*"),
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::token::Token;
 use core::fmt;
-use std::{num, iter::Peekable};
+use std::{iter::Peekable, num};
 
 #[derive(Debug)]
 pub enum LexerError {
@@ -72,7 +72,7 @@ impl Lexer {
                     ':' => (Token::Colon),
                     ch if ch.is_alphabetic() || ch == '_' => {
                         let mut iden = ch.to_string();
-                        while let Some((_, ch)) = char_iter.next_if(|(_, ch)| ch.is_alphabetic()) {
+                        while let Some((_, ch)) = char_iter.next_if(|(_, ch)| ch.is_alphabetic() || *ch == '_') {
                             iden.push(ch);
                         }
 

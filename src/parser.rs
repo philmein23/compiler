@@ -1,12 +1,10 @@
-use crate::ast::Expression;
-use crate::ast::Infix;
-use crate::ast::Prefix;
-use crate::ast::Statement;
+use crate::ast::{Expression, Infix, Prefix, Statement};
 use crate::token::Token;
 use core::fmt;
 use std::fmt::Display;
 use std::iter::Peekable;
 use std::vec;
+use tracing::{event, info, debug, instrument, Level};
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -38,6 +36,7 @@ enum Precedence {
     Call,
 }
 
+#[derive(Debug)]
 pub struct Parser<'a> {
     pub tokens: Peekable<std::slice::Iter<'a, Token>>,
 }
@@ -58,6 +57,7 @@ impl Parser<'_> {
         Ok(statements)
     }
 
+    #[instrument(skip(self))]
     fn parse_statement(&mut self) -> Result<Statement, ParserError> {
         match self.tokens.peek() {
             Some(Token::Let) => self.parse_let_statement(),
@@ -66,6 +66,7 @@ impl Parser<'_> {
         }
     }
 
+    #[instrument(skip(self))]
     fn parse_statement_expression(&mut self) -> Result<Statement, ParserError> {
         let expr = self.parse_expression(Precedence::Lowest)?;
 
@@ -74,53 +75,93 @@ impl Parser<'_> {
         Ok(Statement::Expression(expr))
     }
 
+    #[instrument(skip(self))]
     fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, ParserError> {
         let mut left_expr = self.prefix_parse_methods()?;
+        debug!("Prefix expr: {:?}", left_expr);
 
         loop {
+            let some_token = self.tokens.peek().map(|token| *token);
+
+            debug!(
+                "Right-binding precedence: {:?}, Left-binding precedence: {:?}",
+                prec,
+                self.lookup_precedence(some_token).0
+            );
+
             if let Some(Token::Semicolon) = self.tokens.peek() {
                 break;
             }
-            // ex. 5 + 10 * 20;
-            // ex. 10 * 5 - 5;
-            // ex. 10 * 2 / 2 + 5;
+            // ex. 5 + (10 * 20); * has a higher left-binding power than +'s right-binding power so
+            // * "sucks in" 10 and becomes the right arm of the AST.
+            // ex. (10 * 5) - 5;
+            // ex. ((10 * 2)/ 2) + 5);
             // Don't like what I did here- need to refactor this
-            let some_token = self.tokens.peek().map(|token| *token);
             if prec >= self.lookup_precedence(some_token).0 {
                 break;
             }
 
             left_expr = self.infix_parse_methods(left_expr)?;
-        } 
+        }
 
         Ok(left_expr)
     }
 
-    fn lookup_precedence(&self, token: Option<&Token>) -> (Precedence, Option<Infix>){
+    fn lookup_precedence(&self, token: Option<&Token>) -> (Precedence, Option<Infix>) {
         match token {
             Some(Token::Plus) => (Precedence::Sum, Some(Infix::Plus)),
             Some(Token::Minus) => (Precedence::Sum, Some(Infix::Minus)),
-            Some(Token::Slash) => (Precedence::Product, Some(Infix::Slash)), 
-            Some(Token::Star) => (Precedence::Product, Some(Infix::Star)), 
-            Some(Token::Greater) => (Precedence::LessGreater, Some(Infix::GreaterThan)), 
-            Some(Token::GreaterEqual) => (Precedence::LessGreater, Some(Infix::GreaterEqual)), 
-            Some(Token::Less) => (Precedence::LessGreater, Some(Infix::LessThan)), 
+            Some(Token::Slash) => (Precedence::Product, Some(Infix::Slash)),
+            Some(Token::Star) => (Precedence::Product, Some(Infix::Star)),
+            Some(Token::Greater) => (Precedence::LessGreater, Some(Infix::GreaterThan)),
+            Some(Token::GreaterEqual) => (Precedence::LessGreater, Some(Infix::GreaterEqual)),
+            Some(Token::Less) => (Precedence::LessGreater, Some(Infix::LessThan)),
             Some(Token::LessEqual) => (Precedence::LessGreater, Some(Infix::LessEqual)),
             Some(Token::Equal) => (Precedence::Equals, Some(Infix::Equal)),
-            Some(Token::NotEqual)  => (Precedence::Equals, Some(Infix::NotEqual)),
-            _ => (Precedence::Lowest, None) 
+            Some(Token::NotEqual) => (Precedence::Equals, Some(Infix::NotEqual)),
+            _ => (Precedence::Lowest, None),
         }
     }
 
+    #[instrument(skip(self))]
     fn prefix_parse_methods(&mut self) -> Result<Expression, ParserError> {
         match self.tokens.peek() {
             Some(Token::Identifier(_)) => self.parse_identifier(),
             Some(Token::Number(_)) => self.parse_number(),
             Some(Token::Bang) | Some(Token::Minus) => self.parse_prefix_expression(),
+            Some(Token::True) | Some(Token::False) => self.parse_boolean(),
+            Some(Token::LeftParen) => self.parse_grouped_expression(),
             _ => return Err(ParserError::UnexpectedToken),
         }
     }
 
+    fn parse_grouped_expression(&mut self) -> Result<Expression, ParserError> {
+        self.tokens.next(); // consume the left paren token
+
+        let expr = self.parse_expression(Precedence::Lowest)?;
+
+        if let Some(Token::RightParen) = self.tokens.peek() {
+            self.tokens.next(); // consume the right paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_boolean(&mut self) -> Result<Expression, ParserError> {
+        let bool_expr = if let Some(Token::True) = self.tokens.peek() {
+            Expression::Boolean(true)
+        } else {
+            Expression::Boolean(false)
+        };
+
+        self.tokens.next(); //consume the boolean token
+        Ok(bool_expr)
+    }
+
+
+    #[instrument(skip(self))]
     fn infix_parse_methods(&mut self, expr: Expression) -> Result<Expression, ParserError> {
         match self.tokens.peek() {
             Some(Token::Plus)
@@ -133,22 +174,27 @@ impl Parser<'_> {
             | Some(Token::LessEqual)
             | Some(Token::Equal)
             | Some(Token::NotEqual) => self.parse_infix_expression(expr),
-            _ => return Err(ParserError::UnexpectedToken)
+            _ => return Err(ParserError::UnexpectedToken),
         }
     }
 
+    #[instrument(skip(self))]
     fn parse_infix_expression(&mut self, left_expr: Expression) -> Result<Expression, ParserError> {
         let token = self.tokens.next(); //consume infix token
         let (prec, maybe_infix) = self.lookup_precedence(token);
         let infix = if let Some(i) = maybe_infix {
             i
-        } else{
+        } else {
             return Err(ParserError::UnexpectedToken);
         };
 
         let right_expr = self.parse_expression(prec)?;
-        
-        Ok(Expression::Binary(Box::new(left_expr), infix, Box::new(right_expr)))
+
+        Ok(Expression::Binary(
+            Box::new(left_expr),
+            infix,
+            Box::new(right_expr),
+        ))
     }
 
     fn parse_prefix_expression(&mut self) -> Result<Expression, ParserError> {

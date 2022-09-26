@@ -7,8 +7,15 @@ use std::{env::args, fs};
 
 use lexer::Lexer;
 use parser::Parser;
+use tracing::{Level, debug};
 
 fn main() {
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_max_level(Level::DEBUG)
+        .pretty()
+        .init();
+
     let mut args = args().skip(1);
     let path = args.next();
 
@@ -24,7 +31,7 @@ fn main() {
                         match p.parse_program() {
                             Ok(stmts) => {
                                 for stmt in stmts {
-                                    println!("STMT: {}", stmt);
+                                    debug!("Statement: {}", stmt);
                                 }
                             }
                             Err(e) => {
