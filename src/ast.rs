@@ -1,9 +1,8 @@
 use std::fmt::Display;
 
-
 #[derive(Debug)]
 pub struct BlockStatement {
-    pub statements: Vec<Statement>
+    pub statements: Vec<Statement>,
 }
 
 impl Display for BlockStatement {
@@ -43,7 +42,6 @@ pub enum Expression {
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
 }
 
-
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
@@ -55,7 +53,7 @@ impl Display for Expression {
             Expression::Boolean(bool) => write!(f, "{}", bool),
             Expression::If(cond, consequence, alternative) => {
                 write!(f, "if ({}) {}", cond, consequence)?;
-                
+
                 if let Some(alt) = alternative {
                     write!(f, "else {}", alt)?;
                 };

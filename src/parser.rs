@@ -1,10 +1,10 @@
-use crate::ast::{Expression, Infix, Prefix, Statement, BlockStatement};
+use crate::ast::{BlockStatement, Expression, Infix, Prefix, Statement};
 use crate::token::Token;
 use core::fmt;
 use std::fmt::Display;
 use std::iter::Peekable;
 use std::vec;
-use tracing::{event, info, debug, instrument, Level};
+use tracing::{debug, event, info, instrument, Level};
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -166,7 +166,6 @@ impl Parser<'_> {
         Ok(bool_expr)
     }
 
-
     #[instrument(skip(self))]
     fn infix_parse_methods(&mut self, expr: Expression) -> Result<Expression, ParserError> {
         match self.tokens.peek() {
@@ -218,7 +217,7 @@ impl Parser<'_> {
     }
 
     fn parse_if_expression(&mut self) -> Result<Expression, ParserError> {
-        self.tokens.next(); // consume the if token 
+        self.tokens.next(); // consume the if token
         if let Some(Token::LeftParen) = self.tokens.peek() {
             self.tokens.next(); // consume the left paren token
         } else {
@@ -250,9 +249,37 @@ impl Parser<'_> {
         }
         self.tokens.next(); // consume the right brace token
 
-        let block_stmt = BlockStatement { statements: stmts}; 
+        let block_stmt = BlockStatement { statements: stmts };
 
-        Ok(Expression::If(Box::new(cond), block_stmt, None))
+        let maybe_else = if let Some(Token::Else) = self.tokens.peek() {
+            self.tokens.next(); // consume the else token
+
+            if let Some(Token::LeftBrace) = self.tokens.peek() {
+                self.tokens.next(); // consume the left brace
+            } else {
+                return Err(ParserError::UnexpectedToken);
+            }
+            let mut else_stmts = vec![];
+
+            loop {
+                match self.tokens.peek() {
+                    Some(Token::EOF) | Some(Token::RightBrace) => break,
+                    _ => {
+                        else_stmts.push(self.parse_statement()?);
+                    }
+                }
+            }
+
+            self.tokens.next(); // consume the right brace token
+
+            Some(BlockStatement {
+                statements: else_stmts,
+            })
+        } else {
+            None
+        };
+
+        Ok(Expression::If(Box::new(cond), block_stmt, maybe_else))
     }
 
     fn parse_number(&mut self) -> Result<Expression, ParserError> {

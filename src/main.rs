@@ -7,7 +7,7 @@ use std::{env::args, fs};
 
 use lexer::Lexer;
 use parser::Parser;
-use tracing::{Level, debug};
+use tracing::{debug, Level};
 
 fn main() {
     tracing_subscriber::fmt()
