@@ -1,5 +1,20 @@
 use std::fmt::Display;
 
+
+#[derive(Debug)]
+pub struct BlockStatement {
+    pub statements: Vec<Statement>
+}
+
+impl Display for BlockStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for stmt in self.statements.iter() {
+            write!(f, "{{ {} }}", stmt)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub enum Statement {
     Let(String, Expression),
@@ -25,18 +40,28 @@ pub enum Expression {
     Unary(Prefix, Box<Expression>),
     Variable(String),
     Boolean(bool),
+    If(Box<Expression>, BlockStatement, Option<BlockStatement>),
 }
 
 
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match &self {
             Expression::Number(n) => write!(f, "{}", n),
             Expression::StringLiteral(s) => write!(f, "{}", s),
             Expression::Binary(lhs, infix, rhs) => write!(f, "({} {} {})", lhs, infix, rhs),
             Expression::Unary(prefix, expr) => write!(f, "({}{})", prefix, expr),
             Expression::Variable(iden) => write!(f, "{}", iden),
             Expression::Boolean(bool) => write!(f, "{}", bool),
+            Expression::If(cond, consequence, alternative) => {
+                write!(f, "if ({}) {}", cond, consequence)?;
+                
+                if let Some(alt) = alternative {
+                    write!(f, "else {}", alt)?;
+                };
+
+                Ok(())
+            }
         }
     }
 }

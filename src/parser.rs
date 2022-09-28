@@ -1,4 +1,4 @@
-use crate::ast::{Expression, Infix, Prefix, Statement};
+use crate::ast::{Expression, Infix, Prefix, Statement, BlockStatement};
 use crate::token::Token;
 use core::fmt;
 use std::fmt::Display;
@@ -70,7 +70,9 @@ impl Parser<'_> {
     fn parse_statement_expression(&mut self) -> Result<Statement, ParserError> {
         let expr = self.parse_expression(Precedence::Lowest)?;
 
-        self.tokens.next(); // consume the semi-colon token
+        if let Some(Token::Semicolon) = self.tokens.peek() {
+            self.tokens.next(); // consume the semi-colon token
+        }
 
         Ok(Statement::Expression(expr))
     }
@@ -90,6 +92,7 @@ impl Parser<'_> {
             );
 
             if let Some(Token::Semicolon) = self.tokens.peek() {
+                debug!("Semicolon is found - break out of loop");
                 break;
             }
             // ex. 5 + (10 * 20); * has a higher left-binding power than +'s right-binding power so
@@ -98,12 +101,14 @@ impl Parser<'_> {
             // ex. ((10 * 2)/ 2) + 5);
             // Don't like what I did here- need to refactor this
             if prec >= self.lookup_precedence(some_token).0 {
+                debug!("lbp is > than rbp- break out of loop");
                 break;
             }
 
             left_expr = self.infix_parse_methods(left_expr)?;
         }
 
+        debug!("Return left_expr {:?}", left_expr);
         Ok(left_expr)
     }
 
@@ -131,6 +136,7 @@ impl Parser<'_> {
             Some(Token::Bang) | Some(Token::Minus) => self.parse_prefix_expression(),
             Some(Token::True) | Some(Token::False) => self.parse_boolean(),
             Some(Token::LeftParen) => self.parse_grouped_expression(),
+            Some(Token::If) => self.parse_if_expression(),
             _ => return Err(ParserError::UnexpectedToken),
         }
     }
@@ -209,6 +215,44 @@ impl Parser<'_> {
         let expr = self.parse_expression(Precedence::Prefix)?;
 
         Ok(Expression::Unary(prefix, Box::new(expr)))
+    }
+
+    fn parse_if_expression(&mut self) -> Result<Expression, ParserError> {
+        self.tokens.next(); // consume the if token 
+        if let Some(Token::LeftParen) = self.tokens.peek() {
+            self.tokens.next(); // consume the left paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+
+        let cond = self.parse_expression(Precedence::Lowest)?;
+
+        if let Some(Token::RightParen) = self.tokens.peek() {
+            self.tokens.next(); // consume the right paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+
+        if let Some(Token::LeftBrace) = self.tokens.peek() {
+            self.tokens.next(); // consume the left brace token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+
+        let mut stmts = vec![];
+        loop {
+            match self.tokens.peek() {
+                Some(Token::EOF) | Some(Token::RightBrace) => break,
+                _ => {
+                    stmts.push(self.parse_statement()?);
+                }
+            }
+        }
+        self.tokens.next(); // consume the right brace token
+
+        let block_stmt = BlockStatement { statements: stmts}; 
+
+        Ok(Expression::If(Box::new(cond), block_stmt, None))
     }
 
     fn parse_number(&mut self) -> Result<Expression, ParserError> {
