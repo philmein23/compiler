@@ -232,54 +232,41 @@ impl Parser<'_> {
             return Err(ParserError::UnexpectedToken);
         }
 
-        if let Some(Token::LeftBrace) = self.tokens.peek() {
-            self.tokens.next(); // consume the left brace token
-        } else {
-            return Err(ParserError::UnexpectedToken);
-        }
-
-        let mut stmts = vec![];
-        loop {
-            match self.tokens.peek() {
-                Some(Token::EOF) | Some(Token::RightBrace) => break,
-                _ => {
-                    stmts.push(self.parse_statement()?);
-                }
-            }
-        }
-        self.tokens.next(); // consume the right brace token
-
-        let block_stmt = BlockStatement { statements: stmts };
+        let block_stmt = self.parse_block_statement()?;
 
         let maybe_else = if let Some(Token::Else) = self.tokens.peek() {
             self.tokens.next(); // consume the else token
-
-            if let Some(Token::LeftBrace) = self.tokens.peek() {
-                self.tokens.next(); // consume the left brace
-            } else {
-                return Err(ParserError::UnexpectedToken);
-            }
-            let mut else_stmts = vec![];
-
-            loop {
-                match self.tokens.peek() {
-                    Some(Token::EOF) | Some(Token::RightBrace) => break,
-                    _ => {
-                        else_stmts.push(self.parse_statement()?);
-                    }
-                }
-            }
-
-            self.tokens.next(); // consume the right brace token
-
-            Some(BlockStatement {
-                statements: else_stmts,
-            })
+            
+            Some(self.parse_block_statement()?)
         } else {
             None
         };
 
         Ok(Expression::If(Box::new(cond), block_stmt, maybe_else))
+    }
+
+    fn parse_block_statement(&mut self) -> Result<BlockStatement, ParserError> {
+        if let Some(Token::LeftBrace) = self.tokens.peek() {
+            self.tokens.next(); // consume the left brace
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+        let mut else_stmts = vec![];
+
+        loop {
+            match self.tokens.peek() {
+                Some(Token::EOF) | Some(Token::RightBrace) => break,
+                _ => {
+                    else_stmts.push(self.parse_statement()?);
+                }
+            }
+        }
+
+        self.tokens.next(); // consume the right brace token
+
+        Ok(BlockStatement {
+            statements: else_stmts,
+        })
     }
 
     fn parse_number(&mut self) -> Result<Expression, ParserError> {
