@@ -138,6 +138,7 @@ impl Parser<'_> {
             Some(Token::True) | Some(Token::False) => self.parse_boolean(),
             Some(Token::LeftParen) => self.parse_grouped_expression(),
             Some(Token::If) => self.parse_if_expression(),
+            Some(Token::Fn) => self.parse_function_expression(),
             _ => return Err(ParserError::UnexpectedToken),
         }
     }
@@ -244,6 +245,57 @@ impl Parser<'_> {
         };
 
         Ok(Expression::If(Box::new(cond), block_stmt, maybe_else))
+    }
+
+    fn parse_function_expression(&mut self) -> Result<Expression, ParserError> {
+        self.tokens.next(); //consume the function token
+        let iden = if let Some(Token::Identifier(iden)) = self.tokens.peek() {
+            self.tokens.next(); // consume the identifier token
+            iden
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        };
+
+        if let Some(Token::LeftParen) = self.tokens.peek() {
+            self.tokens.next(); // consume the left paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        };
+
+       
+    }
+
+    fn parse_function_params(&mut self) -> Result<Vec<String>, ParserError> {
+        let mut params = vec![];
+        match self.tokens.peek() {
+            Some(Token::RightParen) => {
+                self.tokens.next(); // consume the right paren token
+            },
+            Some(Token::Identifier(s)) => {
+                self.tokens.next(); // consume iden token
+                params.push(s.into());
+
+            },
+            _ => return Err(ParserError::UnexpectedToken)
+        }
+
+        while let Some(Token::Comma) = self.tokens.peek() {
+            self.tokens.next(); // consume the comma token
+            if let Some(Token::Identifier(s)) = self.tokens.peek() {
+                self.tokens.next(); // consume the iden token
+                params.push(s.into());
+            } else {
+                return Err(ParserError::UnexpectedToken);
+            };
+        }
+        
+        if let Some(Token::RightParen) = self.tokens.peek() {
+            self.tokens.next(); // consume the left paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        };
+
+        Ok(params)
     }
 
     fn parse_block_statement(&mut self) -> Result<BlockStatement, ParserError> {
