@@ -7,9 +7,11 @@ pub struct BlockStatement {
 
 impl Display for BlockStatement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{\n")?;
         for stmt in self.statements.iter() {
-            write!(f, "{{ {} }}", stmt)?;
+            write!(f, "{}\n", stmt)?;
         }
+        write!(f, "}}")?;
         Ok(())
     }
 }
@@ -40,26 +42,30 @@ pub enum Expression {
     Variable(String),
     Boolean(bool),
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
+    Function(String, Vec<String>, BlockStatement)
 }
 
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
             Expression::Number(n) => write!(f, "{}", n),
-            Expression::StringLiteral(s) => write!(f, "{}", s),
+            Expression::StringLiteral(s) => write!(f, "\"{}\"", s),
             Expression::Binary(lhs, infix, rhs) => write!(f, "({} {} {})", lhs, infix, rhs),
             Expression::Unary(prefix, expr) => write!(f, "({}{})", prefix, expr),
             Expression::Variable(iden) => write!(f, "{}", iden),
             Expression::Boolean(bool) => write!(f, "{}", bool),
             Expression::If(cond, consequence, alternative) => {
-                write!(f, "if ({}) {}", cond, consequence)?;
-
-                if let Some(alt) = alternative {
-                    write!(f, "else {}", alt)?;
-                };
-
+                match alternative {
+                    None => write!(f, "if ({}) {}", cond, consequence)?,
+                    Some(alt) => write!(f, "if ({}) {} else {}", cond, consequence, alt)? 
+                }
                 Ok(())
+            },
+            Expression::Function(name, params, stmts) => {
+                let params = params.join(","); 
+                write!(f, "fn {} ({}) {}", name, params, stmts)
             }
+
         }
     }
 }

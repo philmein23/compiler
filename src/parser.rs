@@ -132,6 +132,7 @@ impl Parser<'_> {
     fn prefix_parse_methods(&mut self) -> Result<Expression, ParserError> {
         match self.tokens.peek() {
             Some(Token::Identifier(_)) => self.parse_identifier(),
+            Some(Token::String(s)) => self.parse_string_literal(),
             Some(Token::Number(_)) => self.parse_number(),
             Some(Token::Bang) | Some(Token::Minus) => self.parse_prefix_expression(),
             Some(Token::True) | Some(Token::False) => self.parse_boolean(),
@@ -278,6 +279,17 @@ impl Parser<'_> {
         };
 
         Ok(Expression::Number(*number))
+    }
+
+    fn parse_string_literal(&mut self) -> Result<Expression, ParserError> {
+        let s = if let Some(Token::String(s)) = self.tokens.peek() {
+            self.tokens.next(); // consume the string token
+            s
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        };
+
+        Ok(Expression::StringLiteral(s.into()))
     }
 
     fn parse_identifier(&mut self) -> Result<Expression, ParserError> {
