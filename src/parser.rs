@@ -262,7 +262,10 @@ impl Parser<'_> {
             return Err(ParserError::UnexpectedToken);
         };
 
-       
+        let params = self.parse_function_params()?;
+        let stmt = self.parse_block_statement()?;
+        
+        Ok(Expression::Function(iden.into(), params, stmt))
     }
 
     fn parse_function_params(&mut self) -> Result<Vec<String>, ParserError> {

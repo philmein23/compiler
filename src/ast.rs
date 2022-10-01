@@ -63,7 +63,7 @@ impl Display for Expression {
             },
             Expression::Function(name, params, stmts) => {
                 let params = params.join(","); 
-                write!(f, "fn {} ({}) {}", name, params, stmts)
+                write!(f, "fn {}({}) {}", name, params, stmts)
             }
 
         }
