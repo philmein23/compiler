@@ -42,7 +42,8 @@ pub enum Expression {
     Variable(String),
     Boolean(bool),
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
-    Function(String, Vec<String>, BlockStatement)
+    Function(String, Vec<String>, BlockStatement),
+    Call(Box<Expression>, Vec<Box<Expression>>),
 }
 
 impl Display for Expression {
@@ -57,15 +58,24 @@ impl Display for Expression {
             Expression::If(cond, consequence, alternative) => {
                 match alternative {
                     None => write!(f, "if ({}) {}", cond, consequence)?,
-                    Some(alt) => write!(f, "if ({}) {} else {}", cond, consequence, alt)? 
+                    Some(alt) => write!(f, "if ({}) {} else {}", cond, consequence, alt)?,
                 }
                 Ok(())
-            },
+            }
             Expression::Function(name, params, stmts) => {
-                let params = params.join(","); 
+                let params = params.join(",");
                 write!(f, "fn {}({}) {}", name, params, stmts)
             }
+            Expression::Call(iden, args) => {
+                let comma_joined_args = args
+                    .iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",");
+                write!(f, "{}({})", iden, comma_joined_args)?;
 
+                Ok(())
+            }
         }
     }
 }
@@ -97,6 +107,7 @@ pub enum Infix {
     GreaterEqual,
     Slash,
     Star,
+    LeftParen,
 }
 
 impl Display for Infix {
@@ -112,6 +123,7 @@ impl Display for Infix {
             Infix::GreaterEqual => write!(f, ">="),
             Infix::Slash => write!(f, "/"),
             Infix::Star => write!(f, "*"),
+            Infix::LeftParen => write!(f, "("),
         }
     }
 }

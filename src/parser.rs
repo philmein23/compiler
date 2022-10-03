@@ -124,6 +124,7 @@ impl Parser<'_> {
             Some(Token::LessEqual) => (Precedence::LessGreater, Some(Infix::LessEqual)),
             Some(Token::Equal) => (Precedence::Equals, Some(Infix::Equal)),
             Some(Token::NotEqual) => (Precedence::Equals, Some(Infix::NotEqual)),
+            Some(Token::LeftParen) => (Precedence::Call, Some(Infix::LeftParen)),
             _ => (Precedence::Lowest, None),
         }
     }
@@ -132,7 +133,7 @@ impl Parser<'_> {
     fn prefix_parse_methods(&mut self) -> Result<Expression, ParserError> {
         match self.tokens.peek() {
             Some(Token::Identifier(_)) => self.parse_identifier(),
-            Some(Token::String(s)) => self.parse_string_literal(),
+            Some(Token::String(_)) => self.parse_string_literal(),
             Some(Token::Number(_)) => self.parse_number(),
             Some(Token::Bang) | Some(Token::Minus) => self.parse_prefix_expression(),
             Some(Token::True) | Some(Token::False) => self.parse_boolean(),
@@ -180,9 +181,40 @@ impl Parser<'_> {
             | Some(Token::Less)
             | Some(Token::LessEqual)
             | Some(Token::Equal)
+            | Some(Token::Assign)
             | Some(Token::NotEqual) => self.parse_infix_expression(expr),
+            Some(Token::LeftParen) => self.parse_call_expression(expr),
             _ => return Err(ParserError::UnexpectedToken),
         }
+    }
+
+    fn parse_call_expression(&mut self, func: Expression) -> Result<Expression, ParserError> {
+        self.tokens.next(); // consume the left paren token
+        let args = self.parse_call_arguments()?;
+
+        if let Some(Token::RightParen) = self.tokens.peek() {
+            self.tokens.next(); // consume the right paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+
+        Ok(Expression::Call(Box::new(func), args))
+    }
+
+    fn parse_call_arguments(&mut self) -> Result<Vec<Box<Expression>>, ParserError> {
+        let mut args = vec![];
+
+        let arg = self.parse_expression(Precedence::Lowest)?;
+        args.push(Box::new(arg));
+
+        while let Some(Token::Comma) = self.tokens.peek() {
+            self.tokens.next(); // consume the comma token
+
+            let arg = self.parse_expression(Precedence::Lowest)?;
+            args.push(Box::new(arg));
+        }
+
+        Ok(args)
     }
 
     #[instrument(skip(self))]
@@ -238,7 +270,7 @@ impl Parser<'_> {
 
         let maybe_else = if let Some(Token::Else) = self.tokens.peek() {
             self.tokens.next(); // consume the else token
-            
+
             Some(self.parse_block_statement()?)
         } else {
             None
@@ -256,30 +288,30 @@ impl Parser<'_> {
             return Err(ParserError::UnexpectedToken);
         };
 
+        let params = self.parse_function_params()?;
+        let stmt = self.parse_block_statement()?;
+
+        Ok(Expression::Function(iden.into(), params, stmt))
+    }
+
+    fn parse_function_params(&mut self) -> Result<Vec<String>, ParserError> {
+        let mut params = vec![];
+
         if let Some(Token::LeftParen) = self.tokens.peek() {
             self.tokens.next(); // consume the left paren token
         } else {
             return Err(ParserError::UnexpectedToken);
         };
 
-        let params = self.parse_function_params()?;
-        let stmt = self.parse_block_statement()?;
-        
-        Ok(Expression::Function(iden.into(), params, stmt))
-    }
-
-    fn parse_function_params(&mut self) -> Result<Vec<String>, ParserError> {
-        let mut params = vec![];
         match self.tokens.peek() {
             Some(Token::RightParen) => {
                 self.tokens.next(); // consume the right paren token
-            },
+            }
             Some(Token::Identifier(s)) => {
                 self.tokens.next(); // consume iden token
                 params.push(s.into());
-
-            },
-            _ => return Err(ParserError::UnexpectedToken)
+            }
+            _ => return Err(ParserError::UnexpectedToken),
         }
 
         while let Some(Token::Comma) = self.tokens.peek() {
@@ -291,7 +323,7 @@ impl Parser<'_> {
                 return Err(ParserError::UnexpectedToken);
             };
         }
-        
+
         if let Some(Token::RightParen) = self.tokens.peek() {
             self.tokens.next(); // consume the left paren token
         } else {
