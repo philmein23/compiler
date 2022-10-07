@@ -108,6 +108,7 @@ impl Parser<'_> {
             left_expr = self.infix_parse_methods(left_expr)?;
         }
 
+        println!("NEXT TOKEN {:?}", self.tokens.peek());
         debug!("Return left_expr {:?}", left_expr);
         Ok(left_expr)
     }
@@ -140,8 +141,48 @@ impl Parser<'_> {
             Some(Token::LeftParen) => self.parse_grouped_expression(),
             Some(Token::If) => self.parse_if_expression(),
             Some(Token::Fn) => self.parse_function_expression(),
+            Some(Token::LeftBrace) => self.parse_hash(),
             _ => return Err(ParserError::UnexpectedToken),
         }
+    }
+
+    fn parse_hash(&mut self) -> Result<Expression, ParserError> {
+        self.tokens.next(); // consume the left brace
+
+        let mut pairs = vec![];
+        loop {
+            if let Some(Token::RightBrace) = self.tokens.peek() {
+                break;
+            }
+            let key = self.parse_expression(Precedence::Lowest)?;
+
+            if let Some(Token::Colon) = self.tokens.peek() {
+                self.tokens.next(); // consume the colon token
+            } else {
+                return Err(ParserError::UnexpectedToken);
+            }
+
+            let value = self.parse_expression(Precedence::Lowest)?;
+            
+            pairs.push((key, value));
+
+            match self.tokens.peek() {
+                Some(Token::Comma) => {
+                    self.tokens.next(); // consume the comma token
+                }
+                Some(Token::RightBrace) => {
+                    break;
+                }
+                _ => {
+                    return Err(ParserError::UnexpectedToken);
+                }
+            }
+
+        }
+
+        self.tokens.next(); // consume the right brace
+
+        Ok(Expression::Hash(pairs))
     }
 
     fn parse_grouped_expression(&mut self) -> Result<Expression, ParserError> {

@@ -44,6 +44,7 @@ pub enum Expression {
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
     Function(String, Vec<String>, BlockStatement),
     Call(Box<Expression>, Vec<Box<Expression>>),
+    Hash(Vec<(Expression, Expression)>),
 }
 
 impl Display for Expression {
@@ -73,6 +74,15 @@ impl Display for Expression {
                     .collect::<Vec<String>>()
                     .join(",");
                 write!(f, "{}({})", iden, comma_joined_args)?;
+
+                Ok(())
+            }
+            Expression::Hash(pairs) => {
+                write!(f, "{{")?;
+                for (key, value) in pairs.iter() {
+                    writeln!(f, "{}: {},", key, value)?;
+                }
+                write!(f, "}}")?;
 
                 Ok(())
             }
