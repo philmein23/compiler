@@ -142,8 +142,17 @@ impl Parser<'_> {
             Some(Token::If) => self.parse_if_expression(),
             Some(Token::Fn) => self.parse_function_expression(),
             Some(Token::LeftBrace) => self.parse_hash(),
+            Some(Token::LeftBracket) => self.parse_array_expression(),
             _ => return Err(ParserError::UnexpectedToken),
         }
+    }
+
+    fn parse_array_expression(&mut self) -> Result<Expression, ParserError> {
+        self.tokens.next(); // consume the left brace token
+
+        let expr_list = self.parse_expression_list(Token::RightBracket)?;
+
+        Ok(Expression::ArrayLiteral(expr_list))
     }
 
     fn parse_hash(&mut self) -> Result<Expression, ParserError> {
@@ -231,18 +240,12 @@ impl Parser<'_> {
 
     fn parse_call_expression(&mut self, func: Expression) -> Result<Expression, ParserError> {
         self.tokens.next(); // consume the left paren token
-        let args = self.parse_call_arguments()?;
-
-        if let Some(Token::RightParen) = self.tokens.peek() {
-            self.tokens.next(); // consume the right paren token
-        } else {
-            return Err(ParserError::UnexpectedToken);
-        }
+        let args = self.parse_expression_list(Token::RightBrace)?;
 
         Ok(Expression::Call(Box::new(func), args))
     }
 
-    fn parse_call_arguments(&mut self) -> Result<Vec<Box<Expression>>, ParserError> {
+    fn parse_expression_list(&mut self, end: Token) -> Result<Vec<Box<Expression>>, ParserError> {
         let mut args = vec![];
 
         let arg = self.parse_expression(Precedence::Lowest)?;
@@ -253,6 +256,12 @@ impl Parser<'_> {
 
             let arg = self.parse_expression(Precedence::Lowest)?;
             args.push(Box::new(arg));
+        }
+
+        if let Some(end) = self.tokens.peek() {
+            self.tokens.next(); // consume the right paren token
+        } else {
+            return Err(ParserError::UnexpectedToken);
         }
 
         Ok(args)

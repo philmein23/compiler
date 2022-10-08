@@ -21,6 +21,8 @@ pub enum Token {
     While,
     For,
     Fn,
+    LeftBracket,
+    RightBracket,
     LeftParen,
     RightParen,
     LeftBrace,
@@ -41,7 +43,7 @@ impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Token::If => write!(f, "if"),
-            Token::Else => write!(f, "e1lse"),
+            Token::Else => write!(f, "else"),
             Token::True => write!(f, "true"),
             Token::False => write!(f, "false"),
             Token::Let => write!(f, "let"),
@@ -59,6 +61,8 @@ impl Display for Token {
             Token::While => write!(f, "while"),
             Token::For => write!(f, "for"),
             Token::Fn => write!(f, "fn"),
+            Token::LeftBracket => write!(f, "["),
+            Token::RightBracket => write!(f, "]"),
             Token::RightParen => write!(f, ")"),
             Token::LeftParen => write!(f, "("),
             Token::RightBrace => write!(f, "}}"),

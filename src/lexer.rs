@@ -60,6 +60,8 @@ impl Lexer {
                     },
                     '.' => (Token::Dot),
                     ',' => (Token::Comma),
+                    '[' => (Token::LeftBracket),
+                    ']' => (Token::RightBracket),
                     '{' => (Token::LeftBrace),
                     '}' => (Token::RightBrace),
                     '(' => (Token::LeftParen),

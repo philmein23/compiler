@@ -45,6 +45,7 @@ pub enum Expression {
     Function(String, Vec<String>, BlockStatement),
     Call(Box<Expression>, Vec<Box<Expression>>),
     Hash(Vec<(Expression, Expression)>),
+    ArrayLiteral(Vec<Box<Expression>>)
 }
 
 impl Display for Expression {
@@ -84,6 +85,14 @@ impl Display for Expression {
                 }
                 write!(f, "}}")?;
 
+                Ok(())
+            }
+            Expression::ArrayLiteral(list) => {
+                write!(f, "[")?;
+                for ele in list.iter() {
+                    write!(f, "{}, ", ele)?;
+                }
+                write!(f, "]")?;
                 Ok(())
             }
         }
