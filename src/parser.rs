@@ -99,7 +99,7 @@ impl Parser<'_> {
             // ex. (10 * 5) - 5;
             // ex. ((10 * 2)/ 2) + 5);
             left_expr = match self.lookup_precedence(some_token).0 {
-                lbp if rbp < lbp => self.parse_infix_expression(left_expr)?, 
+                lbp if rbp < lbp => self.infix_parse_methods(left_expr)?, 
                 _ => break
 
             };
