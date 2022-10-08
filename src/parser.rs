@@ -78,16 +78,15 @@ impl Parser<'_> {
     }
 
     #[instrument(skip(self))]
-    fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, ParserError> {
+    fn parse_expression(&mut self, rbp: Precedence) -> Result<Expression, ParserError> {
         let mut left_expr = self.prefix_parse_methods()?;
-        debug!("Prefix expr: {:?}", left_expr);
 
         loop {
             let some_token = self.tokens.peek().map(|token| *token);
 
             debug!(
                 "Right-binding precedence: {:?}, Left-binding precedence: {:?}",
-                prec,
+                rbp,
                 self.lookup_precedence(some_token).0
             );
 
@@ -99,17 +98,13 @@ impl Parser<'_> {
             // * "sucks in" 10 and becomes the right arm of the AST.
             // ex. (10 * 5) - 5;
             // ex. ((10 * 2)/ 2) + 5);
-            // Don't like what I did here- need to refactor this
-            if prec >= self.lookup_precedence(some_token).0 {
-                debug!("lbp is > than rbp- break out of loop");
-                break;
-            }
+            left_expr = match self.lookup_precedence(some_token).0 {
+                lbp if rbp < lbp => self.parse_infix_expression(left_expr)?, 
+                _ => break
 
-            left_expr = self.infix_parse_methods(left_expr)?;
+            };
         }
 
-        println!("NEXT TOKEN {:?}", self.tokens.peek());
-        debug!("Return left_expr {:?}", left_expr);
         Ok(left_expr)
     }
 

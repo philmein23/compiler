@@ -72,10 +72,10 @@ impl Lexer {
                     '/' => (Token::Slash),
                     ';' => (Token::Semicolon),
                     ':' => (Token::Colon),
-                    ch if ch.is_alphabetic() || ch == '_' => {
+                    ch if ch.is_alphanumeric() || ch == '_' => {
                         let mut iden = ch.to_string();
                         while let Some((_, ch)) =
-                            char_iter.next_if(|(_, ch)| ch.is_alphabetic() || *ch == '_')
+                            char_iter.next_if(|(_, ch)| ch.is_alphanumeric() || *ch == '_')
                         {
                             iden.push(ch);
                         }
