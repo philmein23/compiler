@@ -34,6 +34,7 @@ enum Precedence {
     Product,
     Prefix,
     Call,
+    Index,
 }
 
 #[derive(Debug)]
@@ -121,6 +122,7 @@ impl Parser<'_> {
             Some(Token::Equal) => (Precedence::Equals, Some(Infix::Equal)),
             Some(Token::NotEqual) => (Precedence::Equals, Some(Infix::NotEqual)),
             Some(Token::LeftParen) => (Precedence::Call, Some(Infix::LeftParen)),
+            Some(Token::LeftBracket) => (Precedence::Index, Some(Infix::LeftBracket)),
             _ => (Precedence::Lowest, None),
         }
     }
@@ -229,8 +231,24 @@ impl Parser<'_> {
             | Some(Token::Assign)
             | Some(Token::NotEqual) => self.parse_infix_expression(expr),
             Some(Token::LeftParen) => self.parse_call_expression(expr),
+            Some(Token::LeftBracket) => self.parse_array_index(expr),
             _ => return Err(ParserError::UnexpectedToken),
         }
+    }
+
+    #[instrument(skip(self))]
+    fn parse_array_index(&mut self, left: Expression) -> Result<Expression, ParserError> {
+        self.tokens.next(); // consume the left bracket token
+
+        let index = self.parse_expression(Precedence::Lowest)?;
+
+        if let Some(Token::RightBracket) = self.tokens.peek() {
+            self.tokens.next(); // consume the right bracket token
+        } else {
+            return Err(ParserError::UnexpectedToken)
+        }
+        
+        Ok(Expression::ArrayIndex(Box::new(left), Box::new(index)))
     }
 
     fn parse_call_expression(&mut self, func: Expression) -> Result<Expression, ParserError> {

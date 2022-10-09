@@ -45,7 +45,8 @@ pub enum Expression {
     Function(String, Vec<String>, BlockStatement),
     Call(Box<Expression>, Vec<Box<Expression>>),
     Hash(Vec<(Expression, Expression)>),
-    ArrayLiteral(Vec<Box<Expression>>)
+    ArrayLiteral(Vec<Box<Expression>>),
+    ArrayIndex(Box<Expression>, Box<Expression>)
 }
 
 impl Display for Expression {
@@ -90,10 +91,13 @@ impl Display for Expression {
             Expression::ArrayLiteral(list) => {
                 write!(f, "[")?;
                 for ele in list.iter() {
-                    write!(f, "{}, ", ele)?;
+                    write!(f, "{}", ele)?;
                 }
                 write!(f, "]")?;
                 Ok(())
+            }
+            Expression::ArrayIndex(left, index) => {
+                write!(f, "{}[{}]", left, index)
             }
         }
     }
@@ -127,6 +131,7 @@ pub enum Infix {
     Slash,
     Star,
     LeftParen,
+    LeftBracket,
 }
 
 impl Display for Infix {
@@ -143,6 +148,7 @@ impl Display for Infix {
             Infix::Slash => write!(f, "/"),
             Infix::Star => write!(f, "*"),
             Infix::LeftParen => write!(f, "("),
+            Infix::LeftBracket => write!(f, "[")
         }
     }
 }
