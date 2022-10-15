@@ -82,6 +82,14 @@ impl Lexer {
 
                         let token = match iden.as_str() {
                             "let" => Token::Let,
+                            "var" => Token::Var,
+                            "class" => Token::Class,
+                            "nil" => Token::Nil,
+                            "print" => Token::Print,
+                            "fun" => Token::Fun,
+                            "super" => Token::Super,
+                            "and" => Token::And,
+                            "or" => Token::Or,
                             "fn" => Token::Fn,
                             "if" => Token::If,
                             "else" => Token::Else,

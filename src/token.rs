@@ -36,6 +36,14 @@ pub enum Token {
     Plus,
     Minus,
     Slash,
+    Class,
+    Fun,
+    Print,
+    And,
+    Or,
+    Super,
+    Nil,
+    Var,
     EOF,
 }
 
@@ -76,6 +84,14 @@ impl Display for Token {
             Token::Plus => write!(f, "+"),
             Token::Minus => write!(f, "-"),
             Token::Slash => write!(f, "/"),
+            Token::Var => write!(f, "var"),
+            Token::Class => write!(f, "class"),
+            Token::Super => write!(f, "super"),
+            Token::Fun => write!(f, "fun"),
+            Token::And => write!(f, "and"),
+            Token::Or => write!(f, "or"),
+            Token::Nil => write!(f, "nil"),
+            Token::Print => write!(f, "print"),
             Token::EOF => write!(f, "End of file"),
         }
     }

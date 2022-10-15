@@ -258,17 +258,17 @@ impl Parser<'_> {
         Ok(Expression::Call(Box::new(func), args))
     }
 
-    fn parse_expression_list(&mut self, end: Token) -> Result<Vec<Box<Expression>>, ParserError> {
+    fn parse_expression_list(&mut self, end: Token) -> Result<Vec<Expression>, ParserError> {
         let mut args = vec![];
 
         let arg = self.parse_expression(Precedence::Lowest)?;
-        args.push(Box::new(arg));
+        args.push(arg);
 
         while let Some(Token::Comma) = self.tokens.peek() {
             self.tokens.next(); // consume the comma token
 
             let arg = self.parse_expression(Precedence::Lowest)?;
-            args.push(Box::new(arg));
+            args.push(arg);
         }
 
         if let Some(end) = self.tokens.peek() {
@@ -482,5 +482,14 @@ impl Parser<'_> {
         self.tokens.next(); // consume the semicolon token
 
         Ok(Statement::Return(expr))
+    }
+
+    fn consume(&mut self, token: Token) -> Result<(), ParserError> {
+        if let Some(token) = self.tokens.peek() {
+            self.tokens.next(); // consume the equal token
+        } else {
+            return Err(ParserError::UnexpectedToken);
+        }
+        Ok(())
     }
 }

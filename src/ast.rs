@@ -43,9 +43,9 @@ pub enum Expression {
     Boolean(bool),
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
     Function(String, Vec<String>, BlockStatement),
-    Call(Box<Expression>, Vec<Box<Expression>>),
+    Call(Box<Expression>, Vec<Expression>),
     Hash(Vec<(Expression, Expression)>),
-    ArrayLiteral(Vec<Box<Expression>>),
+    ArrayLiteral(Vec<Expression>),
     ArrayIndex(Box<Expression>, Box<Expression>)
 }
 
