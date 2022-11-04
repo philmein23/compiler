@@ -10,11 +10,11 @@ use parser::Parser;
 use tracing::{debug, Level};
 
 fn main() {
-    // tracing_subscriber::fmt()
-    //     .with_target(false)
-    //     .with_max_level(Level::DEBUG)
-    //     .pretty()
-    //     .init();
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_max_level(Level::DEBUG)
+        .pretty()
+        .init();
 
     let mut args = args().skip(1);
     let path = args.next();

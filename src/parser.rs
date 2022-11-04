@@ -338,12 +338,12 @@ impl Parser<'_> {
 
     fn parse_function_expression(&mut self) -> Result<Expression, ParserError> {
         self.tokens.next(); //consume the function token
-        let iden = if let Some(Token::Identifier(iden)) = self.tokens.peek() {
-            self.tokens.next(); // consume the identifier token
-            iden
-        } else {
+
+        let Some(Token::Identifier(iden)) = self.tokens.peek() else {
             return Err(ParserError::UnexpectedToken);
         };
+        
+        self.tokens.next(); // consume the iden token
 
         let params = self.parse_function_params()?;
         let stmt = self.parse_block_statement()?;
