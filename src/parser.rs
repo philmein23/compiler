@@ -85,14 +85,7 @@ impl Parser<'_> {
         loop {
             let some_token = self.tokens.peek().map(|token| *token);
 
-            debug!(
-                "Right-binding precedence: {:?}, Left-binding precedence: {:?}",
-                rbp,
-                self.lookup_precedence(some_token).0
-            );
-
             if let Some(Token::Semicolon) = self.tokens.peek() {
-                debug!("Semicolon is found - break out of loop");
                 break;
             }
             // ex. 5 + (10 * 20); * has a higher left-binding power than +'s right-binding power so
@@ -104,6 +97,8 @@ impl Parser<'_> {
                 _ => break
 
             };
+
+            dbg!(&left_expr);
         }
 
         Ok(left_expr)
@@ -162,13 +157,10 @@ impl Parser<'_> {
             }
             let key = self.parse_expression(Precedence::Lowest)?;
 
-            if let Some(Token::Colon) = self.tokens.peek() {
-                self.tokens.next(); // consume the colon token
-            } else {
-                return Err(ParserError::UnexpectedToken);
-            }
+            self.consume(Token::Colon)?;
 
             let value = self.parse_expression(Precedence::Lowest)?;
+            dbg!(&value);
             
             pairs.push((key, value));
 
@@ -242,13 +234,15 @@ impl Parser<'_> {
 
         let index = self.parse_expression(Precedence::Lowest)?;
 
+
         if let Some(Token::RightBracket) = self.tokens.peek() {
             self.tokens.next(); // consume the right bracket token
         } else {
             return Err(ParserError::UnexpectedToken)
         }
+
         
-        Ok(Expression::ArrayIndex(Box::new(left), Box::new(index)))
+        dbg!(Ok(Expression::ArrayIndex(Box::new(left), Box::new(index))))
     }
 
     fn parse_call_expression(&mut self, func: Expression) -> Result<Expression, ParserError> {
@@ -485,11 +479,11 @@ impl Parser<'_> {
     }
 
     fn consume(&mut self, token: Token) -> Result<(), ParserError> {
-        if let Some(token) = self.tokens.peek() {
-            self.tokens.next(); // consume the equal token
-        } else {
+        let Some(token) = self.tokens.peek() else {
             return Err(ParserError::UnexpectedToken);
-        }
+        };
+        self.tokens.next(); // consume the token
+
         Ok(())
     }
 }

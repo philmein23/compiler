@@ -1,4 +1,5 @@
 let person = { 
 "name": "phil",
-"age": 35
+"age": 35,
+"hobby": "fitness"
 };
