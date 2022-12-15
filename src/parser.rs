@@ -1,10 +1,10 @@
 use crate::ast::{BlockStatement, Expression, Infix, Prefix, Statement};
 use crate::token::Token;
 use core::fmt;
-use std::fmt::Display;
+
 use std::iter::Peekable;
 use std::vec;
-use tracing::{debug, event, info, instrument, Level};
+use tracing::{instrument};
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -252,7 +252,7 @@ impl Parser<'_> {
         Ok(Expression::Call(Box::new(func), args))
     }
 
-    fn parse_expression_list(&mut self, end: Token) -> Result<Vec<Expression>, ParserError> {
+    fn parse_expression_list(&mut self, _end: Token) -> Result<Vec<Expression>, ParserError> {
         let mut args = vec![];
 
         let arg = self.parse_expression(Precedence::Lowest)?;
@@ -265,7 +265,7 @@ impl Parser<'_> {
             args.push(arg);
         }
 
-        if let Some(end) = self.tokens.peek() {
+        if let Some(_end) = self.tokens.peek() {
             self.tokens.next(); // consume the right paren token
         } else {
             return Err(ParserError::UnexpectedToken);
@@ -477,8 +477,8 @@ impl Parser<'_> {
         Ok(Statement::Return(expr))
     }
 
-    fn consume(&mut self, token: Token) -> Result<(), ParserError> {
-        let Some(token) = self.tokens.peek() else {
+    fn consume(&mut self, _token: Token) -> Result<(), ParserError> {
+        let Some(_token) = self.tokens.peek() else {
             return Err(ParserError::UnexpectedToken);
         };
         self.tokens.next(); // consume the token

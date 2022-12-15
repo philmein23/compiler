@@ -56,7 +56,7 @@ impl Display for Token {
             Token::False => write!(f, "false"),
             Token::Let => write!(f, "let"),
             Token::Number(n) => write!(f, "number {:?}", n),
-            Token::Identifier(i) => write!(f, "variable identifier"),
+            Token::Identifier(_i) => write!(f, "variable identifier"),
             Token::String(s) => write!(f, "string {:?}", s),
             Token::Bang => write!(f, "!"),
             Token::NotEqual => write!(f, "!="),

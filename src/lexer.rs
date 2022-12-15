@@ -43,35 +43,35 @@ impl Lexer {
                 let token = match ch {
                     ' ' => continue,
                     '>' => match char_iter.next_if_eq(&(_pos + 1, '=')) {
-                        Some(_equals) => (Token::GreaterEqual),
-                        None => (Token::Greater),
+                        Some(_equals) => Token::GreaterEqual,
+                        None => Token::Greater,
                     },
                     '<' => match char_iter.next_if_eq(&(_pos + 1, '=')) {
-                        Some(_equals) => (Token::LessEqual),
-                        None => (Token::Less),
+                        Some(_equals) => Token::LessEqual,
+                        None => Token::Less,
                     },
                     '=' => match char_iter.next_if_eq(&(_pos + 1, '=')) {
-                        Some(_equals) => (Token::Equal),
-                        None => (Token::Assign),
+                        Some(_equals) => Token::Equal,
+                        None => Token::Assign,
                     },
                     '!' => match char_iter.next_if_eq(&(_pos + 1, '=')) {
-                        Some(_equals) => (Token::NotEqual),
-                        None => (Token::Bang),
+                        Some(_equals) => Token::NotEqual,
+                        None => Token::Bang,
                     },
-                    '.' => (Token::Dot),
-                    ',' => (Token::Comma),
-                    '[' => (Token::LeftBracket),
-                    ']' => (Token::RightBracket),
-                    '{' => (Token::LeftBrace),
-                    '}' => (Token::RightBrace),
-                    '(' => (Token::LeftParen),
-                    ')' => (Token::RightParen),
-                    '+' => (Token::Plus),
-                    '-' => (Token::Minus),
-                    '*' => (Token::Star),
-                    '/' => (Token::Slash),
-                    ';' => (Token::Semicolon),
-                    ':' => (Token::Colon),
+                    '.' => Token::Dot,
+                    ',' => Token::Comma,
+                    '[' => Token::LeftBracket,
+                    ']' => Token::RightBracket,
+                    '{' => Token::LeftBrace,
+                    '}' => Token::RightBrace,
+                    '(' => Token::LeftParen,
+                    ')' => Token::RightParen,
+                    '+' => Token::Plus,
+                    '-' => Token::Minus,
+                    '*' => Token::Star,
+                    '/' => Token::Slash,
+                    ';' => Token::Semicolon,
+                    ':' => Token::Colon,
                     ch if ch.is_alphanumeric() || ch == '_' => {
                         let mut iden = ch.to_string();
                         while let Some((_, ch)) =
@@ -119,7 +119,7 @@ impl Lexer {
                         }
 
                         match char_iter.next() {
-                            Some((_, ch)) if ch == '"' => (Token::String(str_val)),
+                            Some((_, ch)) if ch == '"' => Token::String(str_val),
                             Some((_, ch)) => return Err(LexerError::InvalidToken(ch)),
                             None => {
                                 return Err(LexerError::EndOfLine);
