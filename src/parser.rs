@@ -449,12 +449,11 @@ impl Parser<'_> {
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParserError> {
         self.tokens.next(); // consume the Let token
-        let iden = if let Some(Token::Identifier(iden)) = self.tokens.peek() {
-            self.tokens.next(); // consume identifier token
-            iden
-        } else {
+
+        let Some(Token::Identifier(iden)) = self.tokens.peek() else {
             return Err(ParserError::UnexpectedToken);
         };
+        self.tokens.next(); // consume iden token
 
         if let Some(Token::Assign) = self.tokens.peek() {
             self.tokens.next(); // consume the equal token
